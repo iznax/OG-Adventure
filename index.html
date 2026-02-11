@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Cube with WASD</title>
+<style>
+  body {
+    margin: 0;
+    background: #111;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+function resize()
+{
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+resize();
+addEventListener("resize", resize);
+
+// Cube definition in local space
+const cubeSize = 12;
+const hs = cubeSize / 2;
+const fov = 2000;
+const MoveSpeed = 0.15;
+
+const cubeLocal = [
+  [-hs, -hs, -hs],
+  [ hs, -hs, -hs],
+  [ hs,  hs, -hs],
+  [-hs,  hs, -hs],
+  [-hs, -hs,  hs],
+  [ hs, -hs,  hs],
+  [ hs,  hs,  hs],
+  [-hs,  hs,  hs]
+];
+
+const edges = [
+  [0,1],[1,2],[2,3],[3,0],
+  [4,5],[5,6],[6,7],[7,4],
+  [0,4],[1,5],[2,6],[3,7]
+];
+
+const WallSize = 4; // thickness
+const WorldScale = 10; // grid scale
+const WorldDepth = 600; // camera z
+
+const Room1        = { Name:'', Back:'#333', Color:'#1f1' };
+const Room2        = { Name:'', Back:'#333', Color:'#f41' };
+const Room3        = { Name:'', Back:'#333', Color:'#17f' };
+const YellowCastle = { Name:'', Back:'#666', Color:'#ff1', Pattern:'Castle', Lock:'Yel' };
+const YellowInside = { Name:'', Back:'#666', Color:'#ff1' };
+const Path1        = { Name:'', Back:'#333', Color:'#ff1', Pattern:'Maze1' };
+const Path2        = { Name:'', Back:'#333', Color:'#fc1', Pattern:'Maze2' };
+const Path3        = { Name:'', Back:'#333', Color:'#f41' };
+const Path4        = { Name:'', Back:'#333', Color:'#ccc' };
+const WhiteCastle  = { Name:'', Back:'#666', Color:'#fff', Pattern:'Castle', Lock:'Wht' };
+const WhiteInside  = { Name:'', Back:'#666', Color:'#fff' };
+const BlackCastle  = { Name:'', Back:'#666', Color:'#000', Pattern:'Castle', Lock:'Blk' };
+const BlackInside  = { Name:'', Back:'#666', Color:'#000' };
+
+function NewCastle(In,Out)
+{
+	// X,Y coordinates are grid units
+	let GateIn    = { Room:In,  X:0, Y:-1.5 };
+	let GateOut   = { Room:In,  X:0, Y: 2.5 };
+	let HallEnter = { Room:Out, X:0, Y: 7 };
+	let HallExit  = { Room:Out, X:0, Y: 10.25 };
+	SetTeleport(GateIn, HallEnter);
+	SetTeleport(HallExit, GateOut);
+	Out.S = '='; // one-way southern exit
+}
+
+function EnterRoom(R)
+{
+	Room = R;
+	Player.Room = R;
+	
+	if (Room.Walls === undefined)
+	{
+		let Walls = [];
+
+		if (Room.Pattern == 'Castle')
+		{
+			Walls.push([-6,-5]); Walls.push([-2,-5]);
+			Walls.push([ 2,-5]); Walls.push([ 6,-5]);
+			Walls.push([-6,-3]); Walls.push([ 6,-3]);
+			Walls.push([-5,-1]); Walls.push([ 5,-1]);
+			Walls.push([-5, 1]); Walls.push([-1.5, 1]);
+			Walls.push([ 1.5, 1]); Walls.push([ 5, 1]);
+			Walls.push([-5, 3]); Walls.push([-1.5, 3]);
+			Walls.push([ 1.5, 3]); Walls.push([ 5, 3]);			
+		}
+		
+		if (Room.Pattern == 'Maze1')
+		{
+			Walls.push([-6, 0]); Walls.push([ 6, 0]);
+			Walls.push([ 0,-3]); Walls.push([ 0, 3]);
+		}
+		if (Room.Pattern == 'Maze2')
+		{
+			Walls.push([-6, 1]); Walls.push([ 6, 1]);
+			Walls.push([-6,-1]); Walls.push([ 6,-1]);
+		}		
+		
+		let N = Room.N || 'X';
+		if (N == 'X')
+		{
+			Walls.push([-12,-9]);
+			Walls.push([ 12,-9]);
+		}
+		if (N == '=')
+		{
+			Walls.push([-12,-9]);
+			Walls.push([ -2,-9]);
+			Walls.push([  2,-9]);
+			Walls.push([ 12,-9]);
+		}
+		
+		let S = Room.S || 'X';
+		if (S == 'X')
+		{
+			Walls.push([-12, 9]);
+			Walls.push([ 12, 9]);		
+		}
+		if (S == '=')
+		{
+			Walls.push([-12, 9]);
+			Walls.push([ -2, 9]);
+			Walls.push([  2, 9]);
+			Walls.push([ 12, 9]);
+		}
+
+		let E = Room.E || 'X';
+		if (E == 'X')
+		{
+			Walls.push([ 12,-9]);
+			Walls.push([ 12, 9]);		
+		}
+		if (E == '=')
+		{
+			Walls.push([ 12,-9]);
+			Walls.push([ 12,-2]);
+			Walls.push([ 12, 2]);
+			Walls.push([ 12, 9]);
+		}
+		if (E == '|')
+		{
+			// TODO: Narrow black wall?
+			Walls.push([ 12,-9]);
+			Walls.push([ 12, 9]);
+		}
+
+		let W = Room.W || 'X';
+		if (W == 'X')
+		{
+			Walls.push([-12,-9]);
+			Walls.push([-12, 9]);		
+		}
+		if (W == '=')
+		{
+			Walls.push([-12,-9]);
+			Walls.push([-12,-2]);
+			Walls.push([-12, 2]);
+			Walls.push([-12, 9]);
+		}
+		if (W == '|')
+		{
+			// TODO: Narrow black wall?
+			Walls.push([-12,-9]);
+			Walls.push([-12, 9]);
+		}
+		
+		Room.Walls = Walls;
+	}
+}
+
+function JoinNS(N,S,ch)
+{
+	ch = ch || '=';
+	N.South = S; N.S = ch;	
+	S.North = N; S.N = ch;
+}
+
+function JoinEW(E,W,ch)
+{
+	ch = ch || '=';
+	E.West = W; E.W = ch;
+	W.East = E; W.E = ch;
+}
+
+function SetTeleport(src,dst)//room, gx, gy, destRoom)
+{
+	let room = src.Room;
+	room.Teleport = { In:src, Out:dst };//x:gx*WorldScale, y:gy*WorldScale, room:destRoom };
+}
+function SetOneWay(room, gx, gy, destRoom)
+{
+	//room.Teleport = { x:gx*WorldScale, y:gy*WorldScale, room:destRoom };
+	room.S = '=';
+}
+
+//    YI
+// CB CY
+// R2 R1 R3
+//       P1
+//    CW P2
+//    P4 P3
+
+JoinNS(YellowCastle,Room1);
+JoinEW(Room2,Room1);
+JoinEW(Room1,Room3);
+JoinNS(BlackCastle,Room3);
+JoinNS(Room2,Path1);
+JoinNS(Path1,Path2);
+JoinNS(Path2,Path3);
+JoinEW(Path3,Path4);
+JoinNS(WhiteCastle,Path4);
+
+NewCastle(YellowCastle, YellowInside);
+NewCastle(WhiteCastle, WhiteInside);
+NewCastle(BlackCastle, BlackInside);
+
+// Player Position
+// Cube world position
+//let xPos = { x: 0, y: 0, z: WorldDepth };
+let Player = { Pos:{x:0,y:0,z:WorldDepth}, Item:null };
+
+// Input
+const keys = { w:false, a:false, s:false, d:false, space:false };
+
+addEventListener("keydown", e => {
+  const k = e.key.toLowerCase();
+  if (k in keys) keys[k] = true;
+  if (k == ' ') keys.space = true;
+});
+
+addEventListener("keyup", e => {
+  const k = e.key.toLowerCase();
+  if (k in keys) keys[k] = false;
+  if (k == ' ') keys.space = false;
+});
+
+const ItemNone = null;
+const ItemKeyY =    { Color:'#f80', Room:null, Shape:'K', Lock:'Yel' };
+const ItemKeyB =    { Color:'#000', Room:null, Shape:'K', Lock:'Blk' };
+const ItemKeyW =    { Color:'#fff', Room:null, Shape:'K', Lock:'Wht' };
+const ItemSword =   { Color:'#fff', Room:null, Shape:'S' };
+const ItemChalice = { Color:'#ff0', Room:null, Shape:'C' };
+const ItemDot =     { Color:'#000', Room:null };
+const ItemGateY =   { Color:'#000', Room:null, Shape:'G' };
+const ItemGateB =   { Color:'#000', Room:null, Shape:'G' };
+
+const Items = [];
+
+InitItem(ItemKeyY,    YellowCastle,-80,0);
+InitItem(ItemKeyB,    WhiteInside,-40,20);
+InitItem(ItemKeyW,    Path3,+40,20);
+InitItem(ItemSword,   Room2,0,0);
+InitItem(ItemChalice, BlackInside,-10,0);//WhiteInside,0,0);
+InitItem(ItemDot,     BlackInside,10,0);
+InitItem(ItemGateY,   YellowCastle,-1,5);
+InitItem(ItemGateB,   BlackCastle,-1,5);
+
+ItemKeyY.Target = ItemGateY;
+ItemKeyB.Target = ItemGateB;
+//ItemKeyW.Target = ItemGateW;
+
+// Projection
+function projectPoint(px, py, pz)
+{
+  const scale = fov / (pz || 0.0001);
+  return {
+    x: px * scale + canvas.width / 2,
+    y: py * scale + canvas.height / 2
+  };
+}
+
+function DropItem(it,room,x,y)
+{
+	if (it)
+	{
+		it.Room = room;
+		it.Pos = {x:x, y:y, z:WorldDepth };
+	}
+}
+
+function InitItem(item,room,x,y)
+{
+	if (item)
+	{
+		DropItem(item,room,x,y);
+		Items.push(item);
+	}
+}
+
+function GetItemDist(it,pos)
+{
+	let dx = pos.x - it.Pos.x;
+	let dy = pos.y - it.Pos.y;
+	return dx*dx + dy*dy;
+}
+
+const PickupRange = 18;
+
+function TryPickup()
+{
+	let item = null;
+	for (let it of Items)
+	{
+		if (it.Room === Room && Player.Item !== it)
+		{
+			if (GetItemDist(it,Player.Pos) < PickupRange*PickupRange)
+			{
+				item = it;
+				break;
+			}
+		}
+	}
+	if (Player.Item)
+	{
+		DropItem(Player.Item,Room,Player.Pos.x,Player.Pos.y);
+		Player.Item = null;
+	}
+	Player.Item = item;
+}
+
+function TryMove(x)
+{
+	if (x !== undefined)
+	{
+		EnterRoom(x);
+	}
+}
+
+function TryMoveToSpot(spot)
+{
+	if (spot !== undefined)
+	{
+		EnterRoom(spot.Room);
+		let pos = Player.Pos;
+		pos.x = spot.X*WorldScale;
+		pos.y = spot.Y*WorldScale;
+		//Player.Pos = cubePos;
+	}
+}
+
+const TeleportRange = 15;
+
+function TryTeleport()
+{
+	let T = Room.Teleport;
+	if (T)
+	{
+		let dx = Player.Pos.x - T.In.X*WorldScale;
+		let dy = Player.Pos.y - T.In.Y*WorldScale;
+		if (dx*dx + dy*dy < TeleportRange*TeleportRange)
+		{
+			TryMoveToSpot(T.Out);
+		}
+	}
+}
+
+function GetProximity(A,B)
+{
+	if (A.Room !== B.Room)
+	{
+		return 65535;
+	}
+	let dx = A.Pos.x - B.Pos.x;
+	let dy = A.Pos.y - B.Pos.y;
+	return dx*dx + dy*dy;
+}
+
+let CycleIndex = 0;
+const CycleColors = ['#f00','#f80','#0f0','#ff0','#0ff','#000'];
+
+function ColorCycle()
+{
+	CycleIndex += 1;
+	const shift = Math.floor(CycleIndex/5);
+	const color = CycleColors[shift % CycleColors.length];
+	return color;
+}
+
+function TryInteract()
+{
+	// Key Color opens Castle Gate
+	let target = Player.Item ? Player.Item.Target : null;
+	if (target)
+	{
+		let distSq = GetProximity(Player,target);
+		//console.log(Math.sqrt(distSq));
+		if (distSq < 35*35)
+		{
+			// Remove the door
+			target.Room = null;
+		}
+	}
+	if (Player.Item == ItemChalice)
+	{
+		if (ItemChalice.Room == YellowInside)
+		{
+			YellowInside.Color = ColorCycle();
+		}
+	}
+}
+
+// Update
+function update(dt)
+{
+  const speed = MoveSpeed * dt;
+
+  let pos = Player.Pos;
+  
+  if (keys.w) pos.y -= speed;
+  if (keys.s) pos.y += speed;
+  if (keys.a) pos.x -= speed;
+  if (keys.d) pos.x += speed;
+  if (keys.space)
+  {
+	TryPickup();
+	keys.space = false; // consumed
+  }
+
+  Player.Room = Room;
+  Player.Pos = pos;
+  TryTeleport();
+  
+  if (pos.y < -9*WorldScale)
+  {
+	pos.y = 9*WorldScale;
+	TryMove(Room.North);
+	//move = Room.North;
+  }
+  else if (pos.y > 9*WorldScale)
+  {
+  	pos.y = -9*WorldScale;
+	TryMove(Room.South);
+	//move = Room.South;
+  }
+  
+  if (pos.x < -12*WorldScale)
+  {
+	pos.x = 12*WorldScale;
+	TryMove(Room.West);
+	//move = Room.West;
+  }
+  else if (pos.x > 12*WorldScale)
+  {
+	pos.x = -12*WorldScale;
+	TryMove(Room.East);
+	//move = Room.East;
+  }
+
+  TryInteract();
+  
+  let item = Player.Item
+  if (item)
+  {
+	item.Room = Room;
+	// TODO: pickup and handle any direction?
+	item.Pos.x = pos.x+12;
+	item.Pos.y = pos.y;
+  }
+}
+
+function drawBox(projected)
+{
+	ctx.beginPath();
+	for (const [a,b] of edges) // standard 3d box edges
+	{
+		const p = projected[a];
+		const q = projected[b];
+		ctx.moveTo(p.x, p.y);
+		ctx.lineTo(q.x, q.y);
+	}
+	ctx.stroke();
+}
+
+let Room = null; EnterRoom(Room1);
+
+function drawRoom()
+{
+	if (Room.Back)
+	{
+		ctx.fillStyle = Room.Back;
+		let NW = projectPoint(-12.5*WorldScale, -9.5*WorldScale, WorldDepth);
+		let SE = projectPoint( 12.5*WorldScale,  9.5*WorldScale, WorldDepth);
+		ctx.fillRect(NW.x, NW.y, SE.x-NW.x, SE.y-NW.y);
+	}
+
+	ctx.strokeStyle = Room.Color;
+	ctx.lineWidth = 2;
+	
+	let W = Room.Walls;
+	let pos = { x:0, y:0, z:WorldDepth };
+	for (let i=0; i<W.length; i+=2)
+	{
+		let a = W[i+0];
+		let b = W[i+1];
+		let mx = (a[0]+b[0])/2;
+		let my = (a[1]+b[1])/2;
+		pos.x = mx*WorldScale;
+		pos.y = my*WorldScale;
+		let H = b[0]-a[0];
+		let V = b[1]-a[1];
+		let dx = H===0 ? WallSize : H*WorldScale/2;
+		let dy = V===0 ? WallSize : V*WorldScale/2;
+		let dz = WallSize;
+		let wall =
+		[
+			[-dx,-dy, dz],
+			[ dx,-dy, dz],
+			[ dx,-dy,-dz],
+			[-dx,-dy,-dz],
+			[-dx, dy, dz],
+			[ dx, dy, dz],
+			[ dx, dy,-dz],
+			[-dx, dy,-dz],			
+		];
+		const projected = wall.map(([x,y,z]) => {
+			return projectPoint(x + pos.x, y + pos.y, z + pos.z);
+		});
+		drawBox(projected);
+	}
+}
+
+function DrawKey(pos)
+{
+	ctx.fillRect(pos.x-8, pos.y-8, 16,  4);
+	ctx.fillRect(pos.x-8, pos.y+8, 16,  4);
+	ctx.fillRect(pos.x-8, pos.y-8,  4, 16);
+	ctx.fillRect(pos.x+6, pos.y-6,  4, 16);
+	ctx.fillRect(pos.x+8, pos.y  , 16,  4);
+	ctx.fillRect(pos.x+24,pos.y  ,  4, 12);
+	ctx.fillRect(pos.x+16,pos.y  ,  4, 12);
+}
+
+function DrawChalice(pos)
+{
+	ctx.fillRect(pos.x-12, pos.y-16, 24, 4);
+	ctx.fillRect(pos.x- 8, pos.y- 8, 16, 4);
+	ctx.fillRect(pos.x- 6, pos.y+ 0, 12, 4);
+	ctx.fillRect(pos.x-12, pos.y+ 8, 24, 4);
+}
+
+function DrawGate(pos)
+{
+	ctx.fillRect(pos.x-30, pos.y+ 0, 65,  4);
+	ctx.fillRect(pos.x-30, pos.y+20, 65,  4);
+	ctx.fillRect(pos.x-30, pos.y+40, 65,  4);
+	ctx.fillRect(pos.x-30, pos.y+60, 65,  4);
+	ctx.fillRect(pos.x-30, pos.y+80, 65,  4);
+	ctx.fillRect(pos.x-20, pos.y- 5,  4, 90);
+	ctx.fillRect(pos.x+0,  pos.y-10,  4, 90);
+	ctx.fillRect(pos.x+20, pos.y- 5,  4, 90);
+}
+
+function DrawSword(pos)
+{
+	//ctx.fillRect(pos.x-14, pos.y, 24, 4);
+	ctx.strokeStyle = ItemSword.Color;
+	ctx.lineWidth = 4;
+	ctx.beginPath();
+	ctx.moveTo(pos.x+ 6, pos.y-8);
+	ctx.lineTo(pos.x+14, pos.y);
+	ctx.lineTo(pos.x+ 8, pos.y+10);
+	ctx.moveTo(pos.x-12, pos.y+1);
+	ctx.lineTo(pos.x+12, pos.y+1);
+	ctx.stroke();				
+}
+
+function drawItems()
+{
+	for (let it of Items)
+	{
+		if (it.Room === Room)
+		{
+			// 000
+			// 0 0000
+			// 000  0
+			
+			// TODO: Shape?
+			let pos = projectPoint(it.Pos.x, it.Pos.y, WorldDepth);
+			ctx.fillStyle = it.Color;
+			switch (it.Shape)
+			{
+				case 'G': DrawGate(pos); break;
+				case 'K': DrawKey(pos); break;
+				case 'S': DrawSword(pos); break;
+				case 'C': DrawChalice(pos); break;
+				default:
+					ctx.fillRect(pos.x-8, pos.y-8, 16, 16);
+					break;
+			}
+		}
+	}
+}
+
+function drawPlayer()
+{
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 2;
+
+  let cubePos = Player.Pos;
+  const projected = cubeLocal.map(([x,y,z]) => {
+    return projectPoint(x + cubePos.x, y + cubePos.y, z + cubePos.z);
+  });
+
+  drawBox(projected);
+}
+
+// Draw the world and All actors
+function draw()
+{
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawRoom();
+  drawItems();
+  drawPlayer();
+}
+
+let last = 0;
+function loop(t)
+{
+  const dt = t - last;
+  last = t;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>
+
