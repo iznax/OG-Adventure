@@ -130,7 +130,7 @@ const BlackCastle  = { Name:'Blk', Back:'#666', Color:'#000', Pattern:'Castle', 
 const BlackInside  = { Name:'InB', Back:'#666', Color:'#000' };
 const BlackMaze    = { Name:'MzB', Back:'#333', Color:'#f00' };
 
-const SecretRoom   = { Name:'Sec', Back:'#333', Color:'#008', Pattern:'Secret' };
+const SecretRoom   = { Name:'Sec', Back:'#333', Color:'#008', Pattern:'Secret', W:' ' };
 
 function NewCastle(In,Out)
 {
@@ -172,8 +172,8 @@ function ToBitmapIndex(gx,gy)
 // X                  X
 // XXXXXXXX    XXXXXXXX
 
-const MAZE1 = [ 0,0,0,0,0,0,0x01000,0x01000,0x01000,0x7FF80,0x001000,0x001000,0x001000 ];
-const MAZE2 = [ 0,0,0,0,0,0,0,0,0x7FF80,0,0x7FF80,0,0,0 ];
+const MAZE1 = [ 0,0,0,0,0,0,0x01000,0x01000,0x01000,0x3FF80,0x001000,0x001000,0x001000 ];
+const MAZE2 = [ 0,0,0,0,0,0,0,0x0FE00,0x08200,0x08200,0x08200,0x0FE00 ];
 const XNAME = [ 0,0,0,0,0,0,0,0x76700,0x21500,0x21700,0x21100,0x76100 ];
 
 const EXIT1 = [ 0xFFFFF,0x800001,0x800001,0x800001,0x800001,0x800001,0xFF0FF ];
@@ -252,7 +252,8 @@ function GetWall(room,EW)
 		case ' ': return 0; // no wall
 		case 'X': return FullWall; // full wall
 		case '=': return 0x7F8FF; // door wall
-		case '|': return (Player.Item === ItemDot) ? 0 : FullWall;
+		case '|': return FullWall;
+		case '$': return HasSecretKey() ? 0 : FullWall;
 	}
 	return FullWall; // full wall
 }
@@ -313,7 +314,7 @@ function RebuildBitmap(R)
 			{
 				switch (it.Shape)
 				{
-					case 'G': // castle gate
+					case '#': // castle gate
 						SetBits(bitmap,11,12,3);						
 						break;
 				}
@@ -336,6 +337,66 @@ function RebuildBitmap(R)
 	R.Bitmap = bitmap;
 }
 				
+function HasChangedWalls()
+{
+	// TODO: Optimize?
+	return ItemDot.Room !== BlackMaze;
+}
+function HasSecretKey()
+{
+	if (ItemDot.Room === Side2 || ItemDot.Room === SecretRoom)
+	{
+		return true;
+	}
+	return Player.Item === ItemDot;
+}
+				
+function TryEW(Room, Walls, Lines, bEast)
+{
+	let xx = bEast ? +12 : -12;
+	let ch = (bEast ? Room.E : Room.W) || 'X';
+	if (ch == 'X')
+	{
+		Walls.push([ xx,-9]);
+		Walls.push([ xx, 9]);
+	}
+	if (ch == '=')
+	{
+		Walls.push([ xx,-9]);
+		Walls.push([ xx,-2]);
+		Walls.push([ xx, 2]);
+		Walls.push([ xx, 9]);
+	}
+	if (ch == '$')
+	{
+		ch = HasSecretKey() ? ' ' : '|';
+	}
+	if (ch == '|')
+	{
+		// Narrow black wall
+		Lines.push([ xx,-9]);
+		Lines.push([ xx, 9]);			
+	}
+}
+
+function TryNS(Room, Walls, bNorth)
+{
+	let yy = bNorth ? -9 : +9;
+	let ch = (bNorth ? Room.N : Room.S) || 'X';
+	if (ch == 'X')
+	{
+		Walls.push([-12,yy]);
+		Walls.push([ 12,yy]);
+	}
+	if (ch == '=')
+	{
+		Walls.push([-12,yy]);
+		Walls.push([ -2,yy]);
+		Walls.push([  2,yy]);
+		Walls.push([ 12,yy]);
+	}
+}
+				
 function EnterRoom(R)
 {
 	Room = R;
@@ -349,129 +410,52 @@ function EnterRoom(R)
 		}
 	}
 	
-	if (R.Bitmap === undefined || Player.Item === ItemDot)
+	// Always rebuild so that ItemDot works correct
+	//if (R.Bitmap === undefined || Player.Item === ItemDot)
 	{
 		RebuildBitmap(R);
 	}
 	
-	if (Room.Walls === undefined)
+	if (Room.Walls === undefined || HasChangedWalls())
 	{
 		let Walls = [];
 		let Lines = [];
 
-		if (Room.Pattern == 'Castle')
-		{
-			Walls.push([-6,-5]); Walls.push([-2,-5]);
-			Walls.push([ 2,-5]); Walls.push([ 6,-5]);
-			Walls.push([-6,-3]); Walls.push([ 6,-3]);
-			Walls.push([-5,-1]); Walls.push([ 5,-1]);
-			Walls.push([-5, 1]); Walls.push([-1.5, 1]);
-			Walls.push([ 1.5, 1]); Walls.push([ 5, 1]);
-			Walls.push([-5, 3]); Walls.push([-1.5, 3]);
-			Walls.push([ 1.5, 3]); Walls.push([ 5, 3]);			
-		}
-		
 		switch (Room.Pattern)
 		{
+			case 'Castle':
+				// TODO: PushWalls(Walls,CASTLE);
+				Walls.push([-6,-5]); Walls.push([-2,-5]);
+				Walls.push([ 2,-5]); Walls.push([ 6,-5]);
+				Walls.push([-6,-3]); Walls.push([ 6,-3]);
+				Walls.push([-5,-1]); Walls.push([ 5,-1]);
+				Walls.push([-5, 1]); Walls.push([-1.5, 1]);
+				Walls.push([ 1.5, 1]); Walls.push([ 5, 1]);
+				Walls.push([-5, 3]); Walls.push([-1.5, 3]);
+				Walls.push([ 1.5, 3]); Walls.push([ 5, 3]);
+				break;
 			case 'Maze1':
-				Walls.push([-6, 0]); Walls.push([ 6, 0]);
-				Walls.push([ 0,-3]); Walls.push([ 0, 3]);
+				PushWalls(Walls,MAZE1);
 				break;
 			case 'Maze2':
-				Walls.push([-6, 1]); Walls.push([ 6, 1]);
-				Walls.push([-6,-1]); Walls.push([ 6,-1]);			
+				PushWalls(Walls,MAZE2);
 				break;
 			case 'Secret':
 				PushWalls(Walls,XNAME);
 				break;
 		}
-		
-		let N = Room.N || 'X';
-		if (N == 'X')
-		{
-			Walls.push([-12,-9]);
-			Walls.push([ 12,-9]);
-		}
-		if (N == '=')
-		{
-			Walls.push([-12,-9]);
-			Walls.push([ -2,-9]);
-			Walls.push([  2,-9]);
-			Walls.push([ 12,-9]);
-		}
-		
-		let S = Room.S || 'X';
-		if (S == 'X')
-		{
-			Walls.push([-12, 9]);
-			Walls.push([ 12, 9]);		
-		}
-		if (S == '=')
-		{
-			Walls.push([-12, 9]);
-			Walls.push([ -2, 9]);
-			Walls.push([  2, 9]);
-			Walls.push([ 12, 9]);
-		}
 
-		let E = Room.E || 'X';
-		if (E == 'X')
-		{
-			Walls.push([ 12,-9]);
-			Walls.push([ 12, 9]);
-		}
-		if (E == '=')
-		{
-			Walls.push([ 12,-9]);
-			Walls.push([ 12,-2]);
-			Walls.push([ 12, 2]);
-			Walls.push([ 12, 9]);
-		}
-		if (E == '|')
-		{
-			if (Player.Item !== ItemDot)
-			{
-				// Narrow black wall
-				Lines.push([ 12,-9]);
-				Lines.push([ 12, 9]);			
-			}
-		}
+		// North
+		TryNS(Room, Walls, true);
 
-		let W = Room.W || 'X';
-		if (W == 'X')
-		{
-			Walls.push([-12,-9]);
-			Walls.push([-12, 9]);		
-		}
-		if (W == '=')
-		{
-			Walls.push([-12,-9]);
-			Walls.push([-12,-2]);
-			Walls.push([-12, 2]);
-			Walls.push([-12, 9]);
-		}
-		if (W == '|')
-		{
-			// Narrow black wall
-			Lines.push([-12,-9]);
-			Lines.push([-12, 9]);
-		}
-		
-		/*
-		Walls.push([-12,8]); Walls.push([-12,8]);
-		Walls.push([-10,8]); Walls.push([-10,8]);
-		Walls.push([-8,8]); Walls.push([-8,8]);
-		Walls.push([-6,8]); Walls.push([-6,8]);
-		Walls.push([-4,8]); Walls.push([-4,8]);
-		Walls.push([-2,8]); Walls.push([-2,8]);
-		Walls.push([-0,7]); Walls.push([-0,7]);
-		Walls.push([ 2,8]); Walls.push([ 2,8]);
-		Walls.push([ 4,8]); Walls.push([ 4,8]);
-		Walls.push([ 6,8]); Walls.push([ 6,8]);
-		Walls.push([ 8,8]); Walls.push([ 8,8]);
-		Walls.push([10,8]); Walls.push([10,8]);
-		Walls.push([12,8]); Walls.push([12,8]);
-		*/
+		// South
+		TryNS(Room, Walls, false);
+
+		// East wall
+		TryEW(Room,Walls,Lines,true);
+
+		// West wall
+		TryEW(Room,Walls,Lines,false);
 		
 		Room.Walls = Walls;
 		Room.Lines = Lines;
@@ -520,17 +504,22 @@ JoinNS(Side1,Side2);
 JoinNS(Side2,Side3);
 JoinEW(Side2,Path3);
 
+/*
+// You teleport when entering the box of the removed wall
 const SecretIn = { Room:Side2, X:0, Y:0, Box:{X0:12,Y0:-9,X1:13,Y1:9} };
+// You teleport here when you enter the room
 const SecretOut = { Room:SecretRoom, X:-11, Y:0 };
 SetTeleport(SecretIn, SecretOut);
-SecretRoom.W = '=';
+*/
+Side2.East = SecretRoom;
+//SecretRoom.W = ' ';
 SecretRoom.West = Side2;
 
 // Block with black wall
 RoomC.E = '|';
 RoomA.W = '|';
 Path4.W = '|';
-Side2.E = '|';
+Side2.E = '$';
 
 NewCastle(YellowCastle, YellowInside);
 NewCastle(WhiteCastle, WhiteInside);
@@ -558,16 +547,18 @@ addEventListener("keyup", e => {
 });
 
 const ItemNone = null;
-const ItemKeyY =    { Color:'#f80', Radius:10, Room:null, Shape:'K', Lock:'Yel' };
-const ItemKeyB =    { Color:'#000', Radius:10, Room:null, Shape:'K', Lock:'Blk' };
-const ItemKeyW =    { Color:'#fff', Radius:10, Room:null, Shape:'K', Lock:'Wht' };
-const ItemSword =   { Color:'#fc0', Radius:10, Room:null, Shape:'S' };
-const ItemChalice = { Color:'#ff0', Radius:9, Room:null, Shape:'C' };
-const ItemDot =     { Color:'#000', Radius:9, Room:null };
-const ItemGateY =   { Color:'#000', Radius:15, Room:null, Shape:'G', NoPickup:1 };
-const ItemGateB =   { Color:'#000', Radius:15, Room:null, Shape:'G', NoPickup:1 };
-const ItemGateW =   { Color:'#000', Radius:15, Room:null, Shape:'G', NoPickup:1 };
+const ItemKeyY =    { Color:'#f80', Radius:10, Shape:'K', Lock:'Yel' };
+const ItemKeyB =    { Color:'#000', Radius:10, Shape:'K', Lock:'Blk' };
+const ItemKeyW =    { Color:'#fff', Radius:10, Shape:'K', Lock:'Wht' };
+const ItemSword =   { Color:'#fc0', Radius:10, Shape:'S' };
+const ItemChalice = { Color:'#ff0', Radius:9,  Shape:'C' };
+const ItemMagnet =  { Color:'#111', Radius:10, Shape:'M' };
+const ItemDot =     { Color:'#000', Radius:9,  Shape:'.' };
+const ItemGateY =   { Color:'#000', Radius:15, Shape:'#', NoPickup:1 };
+const ItemGateB =   { Color:'#000', Radius:15, Shape:'#', NoPickup:1 };
+const ItemGateW =   { Color:'#000', Radius:15, Shape:'#', NoPickup:1 };
 
+const ActorBat     = { Color:'#000', Radius:10, Shape:'b', Mode:'Fly', Speed:0.8 };
 const ActorDragonR = { Color:'#f00', Radius:10, Shape:'d', Mode:'Attack', Speed:0.8 };
 const ActorDragonG = { Color:'#0f4', Radius:10, Shape:'d', Mode:'Attack', Speed:0.6 };
 const ActorDragonY = { Color:'#fc0', Radius:10, Shape:'d', Mode:'Attack', Speed:0.5 };
@@ -577,10 +568,11 @@ const Actors = [];
 
 InitItem(ItemKeyY,    YellowCastle,-80,0);
 InitItem(ItemKeyB,    WhiteInside,-40,20);
-InitItem(ItemKeyW,    Side2,+40,20);
+InitItem(ItemKeyW,    Path2,0,0);
 InitItem(ItemSword,   RoomC,0,0);
 InitItem(ItemChalice, BlackMaze,0,0);
-InitItem(ItemDot,     BlackInside,10,0);
+InitItem(ItemMagnet,  Side1,0,0);
+InitItem(ItemDot,     BlackMaze,-120,-90);
 
 if (!DebugGates)
 {
@@ -589,6 +581,7 @@ if (!DebugGates)
 	InitItem(ItemGateW,   WhiteCastle,-1,5);
 }
 
+InitActor(ActorBat,     Path5,-40,0);
 InitActor(ActorDragonY, RoomA,0,0);
 InitActor(ActorDragonG, Path4,0,0);
 InitActor(ActorDragonR, BlackInside,-20,-50);
@@ -788,6 +781,33 @@ function OpenGate(who,index)
 	}
 }
 
+function FindClosest(src)
+{
+	if (src && src.Pos)
+	{
+		let best = null;
+		let close = 65535;
+		for (let it of Items)
+		{
+			if (it.Room === src.Room && it !== src)
+			{
+				if (it.Shape == '#')
+				{
+					continue;
+				}
+				let dist = GetItemDist(it,src.Pos);
+				if (dist < close)
+				{
+					best = it;
+					close = dist;
+				}
+			}
+		}
+		return best;
+	}
+	return null;
+}
+
 // Automatic actions based on player location
 function TryInteract()
 {
@@ -816,6 +836,19 @@ function TryInteract()
 	if (Player.Item == null)
 	{
 		TryPickup(8);
+	}
+	if (Player.Item === ItemMagnet)
+	{
+		target = FindClosest(ItemMagnet);
+		if (target)
+		{
+			let dx = target.Pos.x - ItemMagnet.Pos.x;
+			let dy = target.Pos.y - (ItemMagnet.Pos.y + 8);
+			if (dx > 0) target.Pos.x -= 1;
+			if (dx < 0) target.Pos.x += 1;
+			if (dy > 0) target.Pos.y -= 1;
+			if (dy < 0) target.Pos.y += 1;			
+		}
 	}
 }
 
@@ -852,8 +885,12 @@ function UpdateCarry(who)
 	}
 }
 
+let FrameIndex = 0;
+	
 function update(dt)
 {
+	FrameIndex += 1;
+
 	let pos = Player.Pos;
 
 	let dx = 0;
@@ -900,8 +937,6 @@ let after = pos.y;
   }
   else if (pos.y > 9*WorldScale)
   {
-	//TryTeleport();
-	//console.log("Wrap before="+before+" after="+after);
   	pos.y = -9*WorldScale;
 	TryMove(Room.South);
   }
@@ -940,24 +975,36 @@ function drawBox(projected)
 
 let Room = null; EnterRoom(RoomB);
 
-function drawLine(a,b)
+function CycleBlack()
+{
+	return (FrameIndex % 10) ? '#000' : '#AAA';
+}
+
+// Some rooms have E/W thin line walls
+function DrawLineWall(a,b)
 {
 	let start = [ a[0]*WorldScale, a[1]*WorldScale, WorldDepth ];
 	let end   = [ b[0]*WorldScale, b[1]*WorldScale, WorldDepth ];
 	const p1 = projectPoint(start[0], start[1], start[2]);
 	const p2 = projectPoint(  end[0],   end[1],   end[2]);
-	ctx.strokeStyle = '#000';
+	// Hint at secret dot usage
+	let color = '#000';
 	if (Player.Item)
 	{
 		if (Player.Item === ItemChalice)
 		{
-			ctx.strokeStyle = GetColorCycle();
+			color = GetColorCycle();
+		}
+		else if (HasSecretKey())
+		{
+			color = CycleBlack(); 
 		}
 		else if (Player.Item.Target)
 		{
-			ctx.strokeStyle = Player.Item.Color;
+			color = Player.Item.Color;
 		}
 	}
+	ctx.strokeStyle = color;
 	ctx.lineWidth = 4;
 	ctx.beginPath();
 	ctx.moveTo(p1.x, p1.y);
@@ -1004,7 +1051,7 @@ function drawRoom()
 
 	for (let k=1; k<Room.Lines.length; k+=2)
 	{
-		drawLine(Room.Lines[k-1],Room.Lines[k]);
+		DrawLineWall(Room.Lines[k-1],Room.Lines[k]);
 	}
 
 	ctx.strokeStyle = Room.Color;
@@ -1045,13 +1092,14 @@ function drawRoom()
 
 function DrawKey(pos)
 {
-	ctx.fillRect(pos.x-8, pos.y-8, 16,  4);
-	ctx.fillRect(pos.x-8, pos.y+8, 16,  4);
-	ctx.fillRect(pos.x-8, pos.y-8,  4, 16);
-	ctx.fillRect(pos.x+6, pos.y-6,  4, 16);
-	ctx.fillRect(pos.x+8, pos.y  , 16,  4);
-	ctx.fillRect(pos.x+24,pos.y  ,  4, 12);
-	ctx.fillRect(pos.x+16,pos.y  ,  4, 12);
+	let x0 = pos.x-6;
+	ctx.fillRect(x0-8, pos.y-8, 16,  4);
+	ctx.fillRect(x0-8, pos.y+8, 16,  4);
+	ctx.fillRect(x0-8, pos.y-8,  4, 16);
+	ctx.fillRect(x0+6, pos.y-6,  4, 16);
+	ctx.fillRect(x0+8, pos.y  , 16,  4);
+	ctx.fillRect(x0+24,pos.y  ,  4, 12);
+	ctx.fillRect(x0+16,pos.y  ,  4, 12);
 }
 
 function DrawChalice(pos)
@@ -1061,6 +1109,23 @@ function DrawChalice(pos)
 	ctx.fillRect(pos.x- 8, pos.y- 8, 16, 4);
 	ctx.fillRect(pos.x- 6, pos.y+ 0, 12, 4);
 	ctx.fillRect(pos.x-12, pos.y+ 8, 24, 4);
+}
+
+//  XX 
+// X  X
+// X  X
+// X  X
+
+function DrawMagnet(pos)
+{
+	ctx.fillStyle = '#000';
+	ctx.fillRect(pos.x- 9,    pos.y-12, 18, 6); // back
+	ctx.fillRect(pos.x-14,    pos.y- 4,  8, 6); // left
+	ctx.fillRect(pos.x-14,    pos.y+ 4,  6, 6); // left
+	ctx.fillRect(pos.x-15,    pos.y+12, 10, 6); // left
+	ctx.fillRect(pos.x+15-10, pos.y+12, 10, 6); // right
+	ctx.fillRect(pos.x+14-6,  pos.y+ 4,  6, 6); // right
+	ctx.fillRect(pos.x+14-8,  pos.y- 4, 8, 6);  // right
 }
 
 function DrawGate(pos)
@@ -1104,10 +1169,11 @@ function drawItems()
 			
 			switch (it.Shape)
 			{
-				case 'G': DrawGate(pos); break;
+				case '#': DrawGate(pos); break;
 				case 'K': DrawKey(pos); break;
 				case 'S': DrawSword(pos); break;
 				case 'C': DrawChalice(pos); break;
+				case 'M': DrawMagnet(pos); break;
 				default:
 					ctx.fillRect(pos.x-8, pos.y-8, 16, 16);
 					break;
@@ -1171,6 +1237,22 @@ const DeadPoints =
 	[+10,+28], // 15:
 ];
 
+// X      X
+//  X XX X
+//   X  X
+
+const BatPoints =
+[
+	[-10,-16], //  0: Up Left
+	[+10,-16], //  1: Up Right
+	[- 8,+ 4], //  2:
+	[+ 8,+ 4], //  3:
+	[- 8,- 0], //  4:
+	[+ 8,+ 0], //  5:
+	[-10,+16], //  6: Down Left
+	[+10,+16], //  7: Down Right
+];
+
 function DrawLines(pos,vlist,ilist,s)
 {
 	let last = -1;
@@ -1209,6 +1291,23 @@ function DrawDragon(actor)
 	ctx.stroke();
 }
 
+function DrawBat(actor)
+{
+	const s = 2.5;
+	let pos = projectPoint(actor.Pos.x, actor.Pos.y, WorldDepth);
+	ctx.beginPath();
+	if (actor.Mode == 'Fly' && (FrameIndex&16))
+	{
+		DrawLines(pos,BatPoints,[ 0,2, 1,3, 2,5, 3,4 ], s);
+	}
+	else
+	{
+		DrawLines(pos,BatPoints,[ 6,2, 7,3, 2,5, 3,4 ], s);
+	}
+	ctx.lineWidth = 6;
+	ctx.stroke();
+}
+
 function drawActors()
 {
 	for (let it of Actors)
@@ -1220,6 +1319,7 @@ function drawActors()
 			
 			switch (it.Shape)
 			{
+				case 'b': DrawBat(it); break;
 				case 'd': DrawDragon(it); break;
 			}				
 		}
@@ -1264,6 +1364,18 @@ function MoveTowardPlayer(who)
 	let dx = Player.Pos.x - who.Pos.x;
 	let dy = Player.Pos.y - who.Pos.y;
 	who.Timer = who.Timer ? (who.Timer+1) : 1;
+	if (dx > 0) who.Pos.x += who.Speed;
+	if (dx < 0) who.Pos.x -= who.Speed;
+	if (dy > 0) who.Pos.y += who.Speed/2;
+	if (dy < 0) who.Pos.y -= who.Speed/2;
+}
+
+function Fly(who)
+{
+	if (DebugKill) return;
+	who.Timer = who.Timer ? (who.Timer+1) : 1;
+	let dx = Math.sin(who.Timer*0.025);
+	let dy = Math.cos(who.Timer*0.025);
 	if (dx > 0) who.Pos.x += who.Speed;
 	if (dx < 0) who.Pos.x -= who.Speed;
 	if (dy > 0) who.Pos.y += who.Speed/2;
@@ -1324,8 +1436,8 @@ function UpdateActors()
 		{
 			case 'Dead': break;
 			case 'Attack': MoveTowardPlayer(it); break;
-			case 'Retreat':
-				break;
+			case 'Retreat': break;
+			case 'Fly': Fly(it); break;
 		}
 	}
 	TryKill();
