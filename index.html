@@ -44,14 +44,19 @@ canvas { display: block; }
 	left: 50%;
 	transform: translateX(-50%);	
 	display: grid;
-	grid-template-columns: 60px 60px 60px;
-	grid-template-rows: 60px 60px; gap: 10px;
+	grid-template-columns: 96px 96px 96px;
+	grid-template-rows: 96px 96px; gap: 16px;
 }
+
+/* disables copy/select popup */
+#touch-controls button { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
 #touch-controls button[data-dir="up"] { grid-column: 2; /* center column */ grid-row: 1; }
 #touch-controls button[data-dir="left"] { grid-column: 1; grid-row: 2; }
 #touch-controls button[data-dir="down"] { grid-column: 2; grid-row: 2; }
 #touch-controls button[data-dir="right"] { grid-column: 3; grid-row: 2; }
+#touch-controls button[data-dir="space"] { background: grey; grid-row: 1; }
+#touch-controls button[data-dir="menu"] { background: grey; grid-row: 1; }
 	
 </style>
 </head>
@@ -60,6 +65,7 @@ canvas { display: block; }
 <div id="key-controls" class="bottom">W,A,S,D = Movement<br>&nbsp;&nbsp;Space = Take/Drop</div>
 
 <div id="touch-controls">
+	<button data-dir="menu" id="menu-btn">&#9776</button>
 	<button data-dir="up">▲</button><br>
 	<button data-dir="left">◀</button>
 	<button data-dir="down">▼</button>
