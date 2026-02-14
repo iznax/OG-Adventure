@@ -638,13 +638,16 @@ function ToDirection(dx,dy)
 
 function canvasTouch(e)
 {
-	Hint.innerHTML = e.touches ? "TOUCH"+e.touches.length : "CANVAS";
+	Hint.innerHTML = e.touches ? "TOUCH "+e.touches.length : "CANVAS";
 	
 	if (e.touches && e.touches.length)
 	{
+		Hint.innerHTML = "TOUCH[0]";
 		const t = e.touches[0];
+		Hint.innerHTML = "TOUCH[0] = "+t;
 		let startX = t.clientX;
 		let startY = t.clientY;
+		Hint.innerHTML = "startX = "+startX;
 		const rect = canvas.getBoundingClientRect();
 		const x = touchX - rect.left;
 		const y = touchY - rect.top;
@@ -653,13 +656,14 @@ function canvasTouch(e)
 		let dx = x - (canvas.width/2);
 		let dy = (canvas.height/2) - y;
 		let dist = Math.sqrt(dx*dx + dy*dy);
+		Hint.innerHTML = "dist = "+dist;
 		if (dist < canvas.height/5)
 		{
 			Hint.innerHTML = "CENTER="+Math.floor(touchX)+","+Math.floor(touchY);
 			return;
 		}
 		let dir = ToDirection(dx,dy);
-		Hint.innerHTML = ['N','NE','E','SE','S','SW','W','NW'][dir];
+		Hint.innerHTML = dir;//['N','NE','E','SE','S','SW','W','NW'][dir];
 	}
 }
 function canvasRelease(e)
