@@ -683,8 +683,6 @@ function canvasMove(e)
 	const y = startY - rect.top;
 	//const sx = x * canvas.width / rect.width;
 	//const sy = y * canvas.height / rect.height;
-	//let dx = x - (rect.width/2);
-	//let dy = (rect.height/2) - y;
 	let cx = rect.left + rect.width/2;
 	let cy = rect.top + rect.height/2;
 	let size = Math.min(rect.width,rect.height);
@@ -697,6 +695,8 @@ function canvasMove(e)
 	}
 	else
 	{
+		let dx = x - (rect.width/2);
+		let dy = (rect.height/2) - y;
 		let dir = ToDirection(dx,dy);
 		text = ['N','NE','E','SE','S','SW','W','NW'][dir];
 	}
