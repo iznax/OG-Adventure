@@ -681,14 +681,15 @@ function canvasMove(e)
 	const rect = canvas.getBoundingClientRect();
 	const x = startX - rect.left;
 	const y = startY - rect.top;
-	const sx = x * canvas.width / rect.width;
-	const sy = y * canvas.height / rect.height;
-	let dx = x - (rect.width/2);
-	let dy = (rect.height/2) - y;
+	//const sx = x * canvas.width / rect.width;
+	//const sy = y * canvas.height / rect.height;
+	//let dx = x - (rect.width/2);
+	//let dy = (rect.height/2) - y;
 	let cx = rect.left + rect.width/2;
 	let cy = rect.top + rect.height/2;
-	let px = (startX - cx) / rect.width;
-	let py = (startY - cy) / rect.height;
+	let size = Math.min(rect.width,rect.height);
+	let px = (startX - cx) / size;
+	let py = (startY - cy) / size;
 	let dist = Math.sqrt(px*px + py*py);
 	if (dist < 0.2)
 	{
@@ -702,7 +703,7 @@ function canvasMove(e)
 	px = Math.floor(px*100)/100;
 	py = Math.floor(py*100)/100;
 	text = "MOVE = "+text+" "+px+", "+py;
-	Hint.innerHTML = text+"<br>"+Math.floor(startX)+"<br>"+rect.width;
+	Hint.innerHTML = text+"<br>"+Math.floor(startX)+"<br>"+size;
 }
 
 //const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left; if (x < canvas.width / 2) { handleLeftTouch(); } else { handleRightTouch(); } });
