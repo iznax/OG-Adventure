@@ -681,19 +681,24 @@ function canvasMove(e)
 	const rect = canvas.getBoundingClientRect();
 	const x = startX - rect.left;
 	const y = startY - rect.top;
-	const px = x * canvas.width / rect.width;
-	const py = y * canvas.height / rect.height;
-	let dx = x - (canvas.width/2);
-	let dy = (canvas.height/2) - y;
-	let dist = Math.sqrt(dx*dx + dy*dy);
-	Hint.innerHTML = "dist = "+dist;
-	if (dist < canvas.width/3)
+	const sx = x * canvas.width / rect.width;
+	const sy = y * canvas.height / rect.height;
+	let dx = x - (rect.width/2);
+	let dy = (rect.height/2) - y;
+	let px = (rect.left + rect.width/2 - startX) / rect.width;
+	let py = (rect.top + rect.height/2 - startY) / rect.height;
+	let dist = Math.sqrt(px*px + py*py);
+	if (dist < 0.3)//rect.width/3)
 	{
-		Hint.innerHTML = "MOVE CENTER = "+Math.floor(x)+", "+Math.floor(y);
-		return;
+		text = "CENTER";
 	}
-	let dir = ToDirection(dx,dy);
-	Hint.innerHTML = "MOVE = "+['N','NE','E','SE','S','SW','W','NW'][dir];
+	else
+	{
+		let dir = ToDirection(dx,dy);
+		text = ['N','NE','E','SE','S','SW','W','NW'][dir];
+	}
+	text = "MOVE = "+text+" "+Math.floor(px)+", "+Math.floor(py);
+	Hint.innerHTML = text+"<br>"+startX;
 }
 
 //const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left; if (x < canvas.width / 2) { handleLeftTouch(); } else { handleRightTouch(); } });
