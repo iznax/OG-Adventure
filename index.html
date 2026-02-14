@@ -166,29 +166,29 @@ const WallSize = 4; // thickness
 const WorldScale = 10; // grid scale
 const WorldDepth = 600; // camera z
 
-const RoomA        = { Name:'RA', Back:'#333', Color:'#17f' };
-const RoomB        = { Name:'RB', Back:'#333', Color:'#1f1' };
-const RoomC        = { Name:'RC', Back:'#333', Color:'#f41' };
-const YellowCastle = { Name:'Yel', Back:'#666', Color:'#ff1', Pattern:'Castle', Lock:'Yel' };
-const YellowInside = { Name:'InY', Back:'#666', Color:'#ff1' };
-const Path1        = { Name:'P1', Back:'#333', Color:'#ff1', Pattern:'Maze1' };
-const Path2        = { Name:'P2', Back:'#333', Color:'#fc1', Pattern:'Maze2' };
-const Path3        = { Name:'P3', Back:'#333', Color:'#f41' };
-const Path4        = { Name:'P4', Back:'#333', Color:'#4c4' };
-const Path5        = { Name:'P5', Back:'#333', Color:'#0ff' };
+const RoomA        = { Name:'RA', Back:'#222', Color:'#17f' };
+const RoomB        = { Name:'RB', Back:'#222', Color:'#1f1' };
+const RoomC        = { Name:'RC', Back:'#222', Color:'#f41' };
+const YellowCastle = { Name:'Yel', Back:'#444', Color:'#ff1', Pattern:'Castle', Lock:'Yel' };
+const YellowInside = { Name:'InY', Back:'#444', Color:'#ff1' };
+const Path1        = { Name:'P1', Back:'#222', Color:'#ff1', Pattern:'Maze1' };
+const Path2        = { Name:'P2', Back:'#222', Color:'#fc1', Pattern:'Maze2' };
+const Path3        = { Name:'P3', Back:'#222', Color:'#f41' };
+const Path4        = { Name:'P4', Back:'#222', Color:'#4c4' };
+const Path5        = { Name:'P5', Back:'#222', Color:'#0ff' };
 
-const Side1        = { Name:'S1', Back:'#333', Color:'#80f' };
-const Side2        = { Name:'S2', Back:'#333', Color:'#0ff' };
-const Side3        = { Name:'S3', Back:'#333', Color:'#f00' };
+const Side1        = { Name:'S1', Back:'#222', Color:'#80f' };
+const Side2        = { Name:'S2', Back:'#222', Color:'#0ff' };
+const Side3        = { Name:'S3', Back:'#222', Color:'#f00' };
 
-const WhiteCastle  = { Name:'Wht', Back:'#666', Color:'#fff', Pattern:'Castle', Lock:'Wht' };
-const WhiteInside  = { Name:'InW', Back:'#666', Color:'#fff' };
+const WhiteCastle  = { Name:'Wht', Back:'#444', Color:'#fff', Pattern:'Castle', Lock:'Wht' };
+const WhiteInside  = { Name:'InW', Back:'#444', Color:'#fff' };
 
-const BlackCastle  = { Name:'Blk', Back:'#666', Color:'#000', Pattern:'Castle', Lock:'Blk' };
-const BlackInside  = { Name:'InB', Back:'#666', Color:'#000' };
-const BlackMaze    = { Name:'MzB', Back:'#333', Color:'#f00' };
+const BlackCastle  = { Name:'Blk', Back:'#444', Color:'#000', Pattern:'Castle', Lock:'Blk' };
+const BlackInside  = { Name:'InB', Back:'#444', Color:'#000' };
+const BlackMaze    = { Name:'MzB', Back:'#222', Color:'#f00' };
 
-const SecretRoom   = { Name:'Sec', Back:'#333', Color:'#008', Pattern:'Secret', W:' ' };
+const SecretRoom   = { Name:'Sec', Back:'#222', Color:'#06C', Pattern:'Secret', W:' ' };
 
 function NewCastle(In,Out)
 {
@@ -601,6 +601,7 @@ function handleTouch(e)
 	if (dir === 'left')  keys.a = true;
 	if (dir === 'right') keys.d = true;
 	if (dir === 'space') keys.space = true;
+	Hint.innerHTML = dir;
 }
 function handleUntouch(e)
 {
@@ -719,8 +720,8 @@ const ItemKeyB =    { Color:'#000', Radius:10, Shape:'K', Lock:'Blk' };
 const ItemKeyW =    { Color:'#fff', Radius:10, Shape:'K', Lock:'Wht' };
 const ItemSword =   { Color:'#fc0', Radius:10, Shape:'S' };
 const ItemChalice = { Color:'#ff0', Radius:9,  Shape:'C' };
-const ItemMagnet =  { Color:'#111', Radius:10, Shape:'M' };
-const ItemDot =     { Color:'#000', Radius:9,  Shape:'.' };
+const ItemMagnet =  { Color:'#003', Radius:10, Shape:'M' };
+const ItemDot =     { Color:'#004', Radius:9,  Shape:'.' };
 const ItemGateY =   { Color:'#000', Radius:15, Shape:'#', NoPickup:1 };
 const ItemGateB =   { Color:'#000', Radius:15, Shape:'#', NoPickup:1 };
 const ItemGateW =   { Color:'#000', Radius:15, Shape:'#', NoPickup:1 };
