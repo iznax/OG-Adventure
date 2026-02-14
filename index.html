@@ -649,8 +649,8 @@ function canvasTouch(e)
 		let startY = t.clientY;
 		Hint.innerHTML = "startX = "+startX;
 		const rect = canvas.getBoundingClientRect();
-		const x = touchX - rect.left;
-		const y = touchY - rect.top;
+		const x = startX - rect.left;
+		const y = startY - rect.top;
 		const px = x * canvas.width / rect.width;
 		const py = y * canvas.height / rect.height;
 		let dx = x - (canvas.width/2);
@@ -659,7 +659,7 @@ function canvasTouch(e)
 		Hint.innerHTML = "dist = "+dist;
 		if (dist < canvas.height/5)
 		{
-			Hint.innerHTML = "CENTER="+Math.floor(touchX)+","+Math.floor(touchY);
+			Hint.innerHTML = "CENTER="+Math.floor(x)+","+Math.floor(y);
 			return;
 		}
 		let dir = ToDirection(dx,dy);
