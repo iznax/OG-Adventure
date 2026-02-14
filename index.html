@@ -9,28 +9,63 @@
         <text x="50%" y="50%" font-size="80" text-anchor="middle" dominant-baseline="central">🕹️</text>
       </svg>'>
 <style>
-  body {
-    margin: 0;
-    background: #111;
-    overflow: hidden;
-  }
-  canvas {
-    display: block;
-  }
-	.bottom
-	{
-		position: absolute;
-		bottom: 20px;
-		left: 20px;
-		color: white;
-		font-size: 20px;
-		pointer-events: none;
-	}  
+
+body
+{
+	margin: 0;
+	background: #111;
+	overflow: hidden;
+}
+  
+canvas { display: block; }
+	
+.bottom
+{
+	position: absolute;
+	bottom: 20px;
+	left: 20px;
+	color: white;
+	font-size: 20px;
+	pointer-events: none;
+}
+	
+#key-controls
+{
+	position: fixed;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+#touch-controls
+{
+	position: fixed;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);	
+	display: grid;
+	grid-template-columns: 60px 60px 60px;
+	grid-template-rows: 60px 60px; gap: 10px;
+}
+
+#touch-controls button[data-dir="up"] { grid-column: 2; /* center column */ grid-row: 1; }
+#touch-controls button[data-dir="left"] { grid-column: 1; grid-row: 2; }
+#touch-controls button[data-dir="down"] { grid-column: 2; grid-row: 2; }
+#touch-controls button[data-dir="right"] { grid-column: 3; grid-row: 2; }
+	
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="hint" class="bottom">W,A,S,D = Movement<br>Space = Take/Drop</div>
+<div id="key-controls" class="bottom">W,A,S,D = Movement<br>&nbsp;&nbsp;Space = Take/Drop</div>
+
+<div id="touch-controls">
+	<button data-dir="up">▲</button><br>
+	<button data-dir="left">◀</button>
+	<button data-dir="down">▼</button>
+	<button data-dir="right">▶</button>
+	<button data-dir="space" id="space-btn">SPACE</button>
+</div>
 
 <div id="AudioBlock">
 <audio id='PlayTake'>
@@ -51,6 +86,7 @@
 const DebugBitmap = false;
 const DebugKill = false;
 const DebugGates = false;
+const DebugMobile = false;
 
 let SoundBank =
 {
@@ -70,6 +106,10 @@ function resize()
 }
 resize();
 addEventListener("resize", resize);
+
+const isPhone = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+const isMobile = isPhone && true; // resolution?
 
 // Player Cube definition in local space
 const cubeSize = 10;
@@ -94,7 +134,6 @@ const edges = [
   [4,5],[5,6],[6,7],[7,4],
   [0,4],[1,5],[2,6],[3,7]
 ];
-
 
 const RoomWidth = 25;  // X = 0..24 = -12..+12
 const RoomHeight = 19; // Y = 0..18 =  -9..-9
@@ -534,17 +573,71 @@ let Player = { Pos:{x:0,y:0,z:WorldDepth}, Item:null };
 // Input
 const keys = { w:false, a:false, s:false, d:false, space:false };
 
-addEventListener("keydown", e => {
-  const k = e.key.toLowerCase();
-  if (k in keys) keys[k] = true;
-  if (k == ' ') keys.space = true;
-});
+function handleTouch(e)
+{
+	const dir = e.target.dataset.dir;
+	if (!dir) return;
+	if (dir === 'up')    keys.w = true;
+	if (dir === 'down')  keys.s = true;
+	if (dir === 'left')  keys.a = true;
+	if (dir === 'right') keys.d = true;
+	if (dir === 'space') keys.space = true;
+}
+function handleUntouch(e)
+{
+	keys.w = false;
+	keys.s = false;
+	keys.a = false;
+	keys.d = false;
+	keys.space = false;
+}
 
-addEventListener("keyup", e => {
-  const k = e.key.toLowerCase();
-  if (k in keys) keys[k] = false;
-  if (k == ' ') keys.space = false;
-});
+function EnableTouchControls()
+{
+	const pad = document.getElementById('touch-controls');
+	pad.style.display = 'grid';
+	const kbd = document.getElementById('key-controls');
+	kbd.style.display = 'none';
+	
+	pad.addEventListener('touchstart', handleTouch, { passive: true });
+	pad.addEventListener('mousedown', handleTouch);
+	pad.addEventListener('touchend', handleUntouch, { passive: true });
+	pad.addEventListener('mouseup', handleUntouch);
+}
+
+function EnableKeyboardControls()
+{
+	const kbd = document.getElementById('key-controls');
+	kbd.style.display = 'display';
+	const pad = document.getElementById('touch-controls');
+	pad.style.display = 'none';
+	
+	addEventListener("keydown", e => {
+	  const k = e.key.toLowerCase();
+	  if (k in keys) keys[k] = true;
+	  if (k == ' ') keys.space = true;
+	});
+
+	addEventListener("keyup", e => {
+	  const k = e.key.toLowerCase();
+	  if (k in keys) keys[k] = false;
+	  if (k == ' ') keys.space = false;
+	});	
+}
+
+function ConfigureInput()
+{
+	if (isMobile || DebugMobile)
+	{
+		EnableTouchControls();
+	}
+	else
+	{
+		EnableKeyboardControls();
+	}
+}
+
+ConfigureInput();
 
 const ItemNone = null;
 const ItemKeyY =    { Color:'#f80', Radius:10, Shape:'K', Lock:'Yel' };
