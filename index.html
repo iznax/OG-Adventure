@@ -18,7 +18,7 @@ body
 	overflow: hidden;
 }
   
-canvas { display: block; }
+canvas { display: block; pointer-events: auto; }
 	
 .bottom
 {
@@ -638,6 +638,8 @@ function ToDirection(dx,dy)
 
 function canvasTouch(e)
 {
+	Hint.innerHTML = e.touches ? "TOUCH"+e.touches.length : "CANVAS";
+	
 	if (e.touches && e.touches.length)
 	{
 		const t = e.touches[0];
@@ -663,6 +665,12 @@ function canvasTouch(e)
 function canvasRelease(e)
 {
 }
+function canvasMove(e)
+{
+	Hint.innerHTML = "MOVE";
+}
+
+//const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left; if (x < canvas.width / 2) { handleLeftTouch(); } else { handleRightTouch(); } });
 
 function EnableTouchControls()
 {
@@ -670,14 +678,17 @@ function EnableTouchControls()
 	pad.style.display = 'grid';
 	const kbd = document.getElementById('key-controls');
 	kbd.style.display = 'none';
+
+	canvas.addEventListener('pointerdown', e => { Hint.innerHTML = "pointer"; });
 	
 	pad.addEventListener('touchstart', handleTouch, { passive: true });
-	pad.addEventListener('mousedown', handleTouch);
 	pad.addEventListener('touchend', handleUntouch, { passive: true });
+	pad.addEventListener('mousedown', handleTouch);
 	pad.addEventListener('mouseup', handleUntouch);
 	
 	canvas.addEventListener('touchstart', canvasTouch, { passive: true });
 	canvas.addEventListener('touchend', canvasRelease, { passive: true });
+	canvas.addEventListener('touchmove', canvasMove);
 }
 
 function EnableKeyboardControls()
