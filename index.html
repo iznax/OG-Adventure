@@ -37,7 +37,7 @@ canvas { display: block; pointer-events: auto; }
 	left: 50%;
 	transform: translateX(-50%);
 	color: red;
-	font-size: 32px;
+	font-size: 64px;
 	pointer-events: none;
 }
 	
@@ -657,7 +657,7 @@ function canvasTouch(e)
 		let dy = (canvas.height/2) - y;
 		let dist = Math.sqrt(dx*dx + dy*dy);
 		Hint.innerHTML = "dist = "+dist;
-		if (dist < canvas.height/5)
+		if (dist < canvas.width/3)
 		{
 			Hint.innerHTML = "CENTER="+Math.floor(x)+","+Math.floor(y);
 			return;
@@ -672,6 +672,28 @@ function canvasRelease(e)
 function canvasMove(e)
 {
 	Hint.innerHTML = "MOVE";
+	
+	const t = e.touches[0];
+	Hint.innerHTML = "TOUCH[0] = "+t;
+	let startX = t.clientX;
+	let startY = t.clientY;
+	Hint.innerHTML = "startX = "+startX;
+	const rect = canvas.getBoundingClientRect();
+	const x = startX - rect.left;
+	const y = startY - rect.top;
+	const px = x * canvas.width / rect.width;
+	const py = y * canvas.height / rect.height;
+	let dx = x - (canvas.width/2);
+	let dy = (canvas.height/2) - y;
+	let dist = Math.sqrt(dx*dx + dy*dy);
+	Hint.innerHTML = "dist = "+dist;
+	if (dist < canvas.width/3)
+	{
+		Hint.innerHTML = "MOVE CENTER = "+Math.floor(x)+", "+Math.floor(y);
+		return;
+	}
+	let dir = ToDirection(dx,dy);
+	Hint.innerHTML = "MOVE = "+['N','NE','E','SE','S','SW','W','NW'][dir];
 }
 
 //const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left; if (x < canvas.width / 2) { handleLeftTouch(); } else { handleRightTouch(); } });
