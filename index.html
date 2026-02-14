@@ -685,10 +685,12 @@ function canvasMove(e)
 	const sy = y * canvas.height / rect.height;
 	let dx = x - (rect.width/2);
 	let dy = (rect.height/2) - y;
-	let px = (rect.left + rect.width/2 - startX) / rect.width;
-	let py = (rect.top + rect.height/2 - startY) / rect.height;
+	let cx = rect.left + rect.width/2;
+	let cy = rect.top + rect.height/2;
+	let px = (startX - cx) / rect.width;
+	let py = (startY - cy) / rect.height;
 	let dist = Math.sqrt(px*px + py*py);
-	if (dist < 0.3)//rect.width/3)
+	if (dist < 0.2)
 	{
 		text = "CENTER";
 	}
@@ -697,8 +699,10 @@ function canvasMove(e)
 		let dir = ToDirection(dx,dy);
 		text = ['N','NE','E','SE','S','SW','W','NW'][dir];
 	}
-	text = "MOVE = "+text+" "+Math.floor(px)+", "+Math.floor(py);
-	Hint.innerHTML = text+"<br>"+startX;
+	px = Math.floor(px*100)/100;
+	py = Math.floor(py*100)/100;
+	text = "MOVE = "+text+" "+px+", "+py;
+	Hint.innerHTML = text+"<br>"+Math.floor(startX)+"<br>"+rect.width;
 }
 
 //const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left; if (x < canvas.width / 2) { handleLeftTouch(); } else { handleRightTouch(); } });
