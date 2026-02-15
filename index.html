@@ -636,6 +636,8 @@ function ToDirection(dx,dy)
 	return 3; // SE
 }
 
+let TouchTarget = null;
+
 function canvasTouch(e)
 {
 	Hint.innerHTML = e.touches ? "TOUCH "+e.touches.length : "CANVAS";
@@ -664,19 +666,65 @@ function canvasTouch(e)
 		}
 		let dir = ToDirection(dx,dy);
 		Hint.innerHTML = dir;//['N','NE','E','SE','S','SW','W','NW'][dir];
+		TouchTarget = { x:startX, y:startY };
 	}
 }
+
 function canvasRelease(e)
 {
+	Hint.innerHTML = "RELEASE";
+	keys.w = false;
+	keys.s = false;
+	keys.a = false;
+	keys.d = false;
+	TouchTarget = null;
 }
+
+function TryMoveTarget()
+{
+	if (TouchTarget)
+	{
+		let size = Math.min(rect.width,rect.height);
+		const proj = projectPoint(Player.Pos.x,Player.Pos.y,Player.Pos.z);
+		const cx = proj.x;
+		const cy = proj.y;
+		let startX = TouchTarget.x;
+		let startY = TouchTarget.y;
+		let px = (startX - cx) / size;
+		let py = (startY - cy) / size;
+		let dist = Math.sqrt(px*px + py*py);
+		if (dist < 0.125)
+		{
+			keys.w=false;
+			keys.a=false;
+			keys.s=false;
+			keys.d=false;
+			return;
+		}
+		let dir = ToDirection(px,py);
+		switch (dir)
+		{
+			case 0: keys.w=true;  keys.d=false; keys.s=false; keys.a=false; break;
+			case 1: keys.w=true;  keys.d=true ; keys.s=false; keys.a=false; break;
+			case 2: keys.w=false; keys.d=true;  keys.s=false; keys.a=false; break;
+			case 3: keys.w=false; keys.d=true;  keys.s=true;  keys.a=false; break;
+			case 4: keys.w=false; keys.d=false; keys.s=true;  keys.a=false; break;
+			case 5: keys.w=false; keys.d=false; keys.s=true;  keys.a=true;  break;
+			case 6: keys.w=false; keys.d=false; keys.s=false; keys.a=true;  break;
+			case 7: keys.w=true;  keys.d=false; keys.s=false; keys.a=true;  break;
+		}
+	}
+}
+
 function canvasMove(e)
 {
-	Hint.innerHTML = "MOVE";
-	
 	const t = e.touches[0];
-	Hint.innerHTML = "TOUCH[0] = "+t;
 	let startX = t.clientX;
 	let startY = t.clientY;
+	const rect = canvas.getBoundingClientRect();
+	let size = Math.min(rect.width,rect.height);
+	Hint.innerHTML = "MOVE size="+size+"<br>X = "+Math.floor(startX)+"<br>Y = "+Math.floor(startY);
+	/*
 	Hint.innerHTML = "startX = "+startX;
 	const rect = canvas.getBoundingClientRect();
 	//const sx = x * canvas.width / rect.width;
@@ -722,6 +770,8 @@ function canvasMove(e)
 	py = Math.floor(py*100)/100;
 	text = "MOVE = "+text+" "+px+", "+py;
 	Hint.innerHTML = text+"<br>"+Math.floor(startX)+"<br>"+size;
+	*/
+	TouchTarget = { x:startX, y:startY };
 }
 
 //const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left; if (x < canvas.width / 2) { handleLeftTouch(); } else { handleRightTouch(); } });
@@ -1126,15 +1176,11 @@ function update(dt)
 
 	let pos = Player.Pos;
 
-// XYZZY
-/*
-let proj = projectPoint(Player.Pos.x,Player.Pos.y,Player.Pos.z);
-let cx = proj.x;
-let cy = proj.y;
-let ww = canvas.width;
-let hh = canvas.height;
-const rect = canvas.getBoundingClientRect();
-*/
+	
+	if (TouchTarget)
+	{
+		TryMoveTarget();
+	}
 	
 	let dx = 0;
 	let dy = 0;
