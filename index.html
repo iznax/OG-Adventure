@@ -608,6 +608,7 @@ let Player = { Pos:{x:0,y:0,z:WorldDepth}, Item:null };
 const keys = { w:false, a:false, s:false, d:false, space:false };
 
 // OBSOLETE: Debug
+/*
 function handleTouch(e)
 {
 	const dir = e.target.dataset.dir;
@@ -620,7 +621,6 @@ function handleTouch(e)
 	Hint.innerHTML = dir;
 }
 
-// OBSOLETE: Debug
 function handleUntouch(e)
 {
 	keys.w = false;
@@ -629,6 +629,7 @@ function handleUntouch(e)
 	keys.d = false;
 	keys.space = false;
 }
+*/
 
 const Hint = document.getElementById("hint-text");
 
@@ -720,63 +721,15 @@ function TryMoveTouch()
 function canvasMove(e)
 {
 	StartTouch(e);
-	
+
+	/*	
 	let startX = TouchTarget.x;
 	let startY = TouchTarget.y;	
 	const rect = canvas.getBoundingClientRect();
 	let size = Math.min(rect.width,rect.height);
 	Hint.innerHTML = "MOVE size="+size+"<br>X = "+Math.floor(startX)+"<br>Y = "+Math.floor(startY);
-	/*
-	Hint.innerHTML = "startX = "+startX;
-	const rect = canvas.getBoundingClientRect();
-	//const sx = x * canvas.width / rect.width;
-	//const sy = y * canvas.height / rect.height;
-	//let cx = rect.left + rect.width/2;
-	//let cy = rect.top + rect.height/2;
-	let size = Math.min(rect.width,rect.height);
-	const proj = projectPoint(Player.Pos.x,Player.Pos.y,Player.Pos.z);
-	const cx = proj.x;
-	const cy = proj.y;
-	let px = (startX - cx) / size;
-	let py = (startY - cy) / size;
-	let dist = Math.sqrt(px*px + py*py);
-	if (dist < 0.125)
-	{
-		text = "CENTER";
-		keys.w = false;
-		keys.s = false;
-		keys.a = false;
-		keys.d = false;
-	}
-	else
-	{
-		const x = startX - rect.left;
-		const y = startY - rect.top;	
-		let dx = x - (rect.width/2);
-		let dy = (rect.height/2) - y;
-		let dir = ToDirection(dx,dy);
-		text = ['N','NE','E','SE','S','SW','W','NW'][dir];
-		switch (dir)
-		{
-			case 0: keys.w=true;  keys.d=false; keys.s=false; keys.a=false; break;
-			case 1: keys.w=true;  keys.d=true ; keys.s=false; keys.a=false; break;
-			case 2: keys.w=false; keys.d=true;  keys.s=false; keys.a=false; break;
-			case 3: keys.w=false; keys.d=true;  keys.s=true;  keys.a=false; break;
-			case 4: keys.w=false; keys.d=false; keys.s=true;  keys.a=false; break;
-			case 5: keys.w=false; keys.d=false; keys.s=true;  keys.a=true;  break;
-			case 6: keys.w=false; keys.d=false; keys.s=false; keys.a=true;  break;
-			case 7: keys.w=true;  keys.d=false; keys.s=false; keys.a=true;  break;
-		}
-	}
-	px = Math.floor(px*100)/100;
-	py = Math.floor(py*100)/100;
-	text = "MOVE = "+text+" "+px+", "+py;
-	Hint.innerHTML = text+"<br>"+Math.floor(startX)+"<br>"+size;
 	*/
-	//TouchTarget = { x:startX, y:startY };
 }
-
-//const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left; if (x < canvas.width / 2) { handleLeftTouch(); } else { handleRightTouch(); } });
 
 function EnableTouchControls()
 {
