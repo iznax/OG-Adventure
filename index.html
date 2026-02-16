@@ -607,6 +607,7 @@ let Player = { Pos:{x:0,y:0,z:WorldDepth}, Item:null };
 // Input
 const keys = { w:false, a:false, s:false, d:false, space:false };
 
+// OBSOLETE: Debug
 function handleTouch(e)
 {
 	const dir = e.target.dataset.dir;
@@ -618,6 +619,8 @@ function handleTouch(e)
 	if (dir === 'space') keys.space = true;
 	Hint.innerHTML = dir;
 }
+
+// OBSOLETE: Debug
 function handleUntouch(e)
 {
 	keys.w = false;
@@ -660,49 +663,23 @@ function StartTouch(e)
 	let startY = t.clientY;
 	TouchTarget = { x:startX, y:startY };
 	
+	/*
 	let dx = startX - (canvas.width/2);
 	let dy = startY - (canvas.height/2);
 	let dir = ToDirection(dx,dy);
-	Hint.innerHTML = dir;//['N','NE','E','SE','S','SW','W','NW'][dir];
+	Hint.innerHTML = ['N','NE','E','SE','S','SW','W','NW'][dir];
+	*/
 }
 
 function canvasTouch(e)
 {
-	Hint.innerHTML = e.touches ? "TOUCH "+e.touches.length : "CANVAS";
-	
+	//Hint.innerHTML = e.touches ? "TOUCH "+e.touches.length : "CANVAS";
 	StartTouch(e);
-	
-	/*
-	if (e.touches && e.touches.length)
-	{
-		const t = e.touches[0];
-		let startX = t.clientX;
-		let startY = t.clientY;
-		Hint.innerHTML = "startX = "+startX;
-		const rect = canvas.getBoundingClientRect();
-		const x = startX - rect.left;
-		const y = startY - rect.top;
-		const px = x * canvas.width / rect.width;
-		const py = y * canvas.height / rect.height;
-		let dx = x - (canvas.width/2);
-		let dy = y - (canvas.height/2);
-		let dist = Math.sqrt(dx*dx + dy*dy);
-		Hint.innerHTML = "dist = "+dist;
-		if (dist < canvas.width/3)
-		{
-			Hint.innerHTML = "CENTER="+Math.floor(x)+","+Math.floor(y);
-			return;
-		}
-		let dir = ToDirection(dx,dy);
-		Hint.innerHTML = dir;//['N','NE','E','SE','S','SW','W','NW'][dir];
-		TouchTarget = { x:startX, y:startY };
-	}
-	*/
 }
 
 function canvasRelease(e)
 {
-	Hint.innerHTML = TouchTarget ? "RELEASE+" : "release";
+	//Hint.innerHTML = TouchTarget ? "RELEASE+" : "release";
 	ClearTouch();
 }
 
@@ -808,12 +785,13 @@ function EnableTouchControls()
 	const kbd = document.getElementById('key-controls');
 	kbd.style.display = 'none';
 
+	/*
 	canvas.addEventListener('pointerdown', e => { Hint.innerHTML = "pointer"; });
-	
 	pad.addEventListener('touchstart', handleTouch, { passive: true });
 	pad.addEventListener('touchend', handleUntouch, { passive: true });
 	pad.addEventListener('mousedown', handleTouch);
 	pad.addEventListener('mouseup', handleUntouch);
+	*/
 	
 	canvas.addEventListener('touchstart', canvasTouch, { passive: true });
 	canvas.addEventListener('touchend', canvasRelease, { passive: true });
@@ -875,11 +853,11 @@ const ItemKeyB =    { Color:'#000', Radius:10, Shape:'K', Lock:'Blk' };
 const ItemKeyW =    { Color:'#fff', Radius:10, Shape:'K', Lock:'Wht' };
 const ItemSword =   { Color:'#fc0', Radius:10, Shape:'S' };
 const ItemChalice = { Color:'#ff0', Radius:9,  Shape:'C' };
-const ItemMagnet =  { Color:'#003', Radius:10, Shape:'M' };
-const ItemDot =     { Color:'#004', Radius:9,  Shape:'.' };
-const ItemGateY =   { Color:'#000', Radius:15, Shape:'#', NoPickup:1 };
-const ItemGateB =   { Color:'#000', Radius:15, Shape:'#', NoPickup:1 };
-const ItemGateW =   { Color:'#000', Radius:15, Shape:'#', NoPickup:1 };
+const ItemMagnet =  { Color:'#000', Radius:10, Shape:'M' };
+const ItemDot =     { Color:'#000', Radius:9,  Shape:'.' };
+const ItemGateY =   { Color:'#002', Radius:15, Shape:'#', NoPickup:1 };
+const ItemGateB =   { Color:'#002', Radius:15, Shape:'#', NoPickup:1 };
+const ItemGateW =   { Color:'#002', Radius:15, Shape:'#', NoPickup:1 };
 
 const ActorBat     = { Color:'#000', Radius:10, Shape:'b', Mode:'Fly', Speed:0.8 };
 const ActorDragonR = { Color:'#f00', Radius:10, Shape:'d', Mode:'Attack', Speed:0.8 };
@@ -1446,7 +1424,7 @@ function DrawChalice(pos)
 
 function DrawMagnet(pos)
 {
-	ctx.fillStyle = '#000';
+	ctx.fillStyle = GetBlackContrast();
 	ctx.fillRect(pos.x- 9,    pos.y-12, 18, 6); // back
 	ctx.fillRect(pos.x-14,    pos.y- 4,  8, 6); // left
 	ctx.fillRect(pos.x-14,    pos.y+ 4,  6, 6); // left
@@ -1494,6 +1472,10 @@ function drawItems()
 			
 			let pos = projectPoint(it.Pos.x, it.Pos.y, WorldDepth);
 			ctx.fillStyle = it.Color;
+			if (it.Color == '#000')
+			{
+				ctx.fillStyle = GetBlackContrast();
+			}
 			
 			switch (it.Shape)
 			{
@@ -1619,10 +1601,18 @@ function DrawDragon(actor)
 	ctx.stroke();
 }
 
+// Dynamic color for high-contrast vs different backgrounds
+function GetBlackContrast()
+{
+	let index = (FrameIndex >> 1) % 6;
+	return ['#000','#000','#200','#000','#000','#022'][index];
+}
+
 function DrawBat(actor)
 {
 	const s = 2.5;
 	let pos = projectPoint(actor.Pos.x, actor.Pos.y, WorldDepth);
+	ctx.strokeStyle = GetBlackContrast();
 	ctx.beginPath();
 	if (actor.Mode == 'Fly' && (FrameIndex&16))
 	{
