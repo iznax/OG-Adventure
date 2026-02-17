@@ -166,29 +166,32 @@ const WallSize = 4; // thickness
 const WorldScale = 10; // grid scale
 const WorldDepth = 600; // camera z
 
-const RoomA        = { Name:'RA', Back:'#222', Color:'#17f' };
-const RoomB        = { Name:'RB', Back:'#222', Color:'#1f1' };
-const RoomC        = { Name:'RC', Back:'#222', Color:'#f41' };
-const YellowCastle = { Name:'Yel', Back:'#444', Color:'#ff1', Pattern:'Castle', Lock:'Yel' };
-const YellowInside = { Name:'InY', Back:'#444', Color:'#ff1' };
-const Path1        = { Name:'P1', Back:'#222', Color:'#ff1', Pattern:'Maze1' };
-const Path2        = { Name:'P2', Back:'#222', Color:'#fc1', Pattern:'Maze2' };
-const Path3        = { Name:'P3', Back:'#222', Color:'#f41' };
-const Path4        = { Name:'P4', Back:'#222', Color:'#4c4' };
-const Path5        = { Name:'P5', Back:'#222', Color:'#0ff' };
+const Floor       = '#556';
+const CastleFloor = '#778';
 
-const Side1        = { Name:'S1', Back:'#222', Color:'#80f' };
-const Side2        = { Name:'S2', Back:'#222', Color:'#0ff' };
-const Side3        = { Name:'S3', Back:'#222', Color:'#f00' };
+const RoomA        = { Name:'RA', Back:Floor, Color:'#17f' };
+const RoomB        = { Name:'RB', Back:Floor, Color:'#1f1' };
+const RoomC        = { Name:'RC', Back:Floor, Color:'#f41' };
+const YellowCastle = { Name:'Yel', Back:CastleFloor, Color:'#ff1', Pattern:'Castle', Lock:'Yel' };
+const YellowInside = { Name:'InY', Back:CastleFloor, Color:'#ff1' };
+const Path1        = { Name:'P1', Back:Floor, Color:'#ff1', Pattern:'Maze1' };
+const Path2        = { Name:'P2', Back:Floor, Color:'#fc1', Pattern:'Maze2' };
+const Path3        = { Name:'P3', Back:Floor, Color:'#f41' };
+const Path4        = { Name:'P4', Back:Floor, Color:'#4c4' };
+const Path5        = { Name:'P5', Back:Floor, Color:'#0ff' };
 
-const WhiteCastle  = { Name:'Wht', Back:'#444', Color:'#fff', Pattern:'Castle', Lock:'Wht' };
-const WhiteInside  = { Name:'InW', Back:'#444', Color:'#fff' };
+const Side1        = { Name:'S1', Back:Floor, Color:'#80f' };
+const Side2        = { Name:'S2', Back:Floor, Color:'#0ff' };
+const Side3        = { Name:'S3', Back:Floor, Color:'#f00' };
 
-const BlackCastle  = { Name:'Blk', Back:'#444', Color:'#000', Pattern:'Castle', Lock:'Blk' };
-const BlackInside  = { Name:'InB', Back:'#444', Color:'#000' };
-const BlackMaze    = { Name:'MzB', Back:'#222', Color:'#f00' };
+const WhiteCastle  = { Name:'Wht', Back:Floor, Color:'#fff', Pattern:'Castle', Lock:'Wht' };
+const WhiteInside  = { Name:'InW', Back:CastleFloor, Color:'#fff' };
 
-const SecretRoom   = { Name:'Sec', Back:'#222', Color:'#06C', Pattern:'Secret', W:' ' };
+const BlackCastle  = { Name:'Blk', Back:CastleFloor, Color:'#000', Pattern:'Castle', Lock:'Blk' };
+const BlackInside  = { Name:'InB', Back:CastleFloor, Color:'#000' };
+const BlackMaze    = { Name:'MzB', Back:Floor, Color:'#f00' };
+
+const SecretRoom   = { Name:'Sec', Back:Floor, Color:'#017', Pattern:'Secret', W:' ' };
 
 function NewCastle(In,Out)
 {
@@ -577,15 +580,7 @@ JoinNS(Side1,Side2);
 JoinNS(Side2,Side3);
 JoinEW(Side2,Path3);
 
-/*
-// You teleport when entering the box of the removed wall
-const SecretIn = { Room:Side2, X:0, Y:0, Box:{X0:12,Y0:-9,X1:13,Y1:9} };
-// You teleport here when you enter the room
-const SecretOut = { Room:SecretRoom, X:-11, Y:0 };
-SetTeleport(SecretIn, SecretOut);
-*/
 Side2.East = SecretRoom;
-//SecretRoom.W = ' ';
 SecretRoom.West = Side2;
 
 // Block with black wall
@@ -812,7 +807,7 @@ const ItemGateY =   { Color:'#002', Radius:15, Shape:'#', NoPickup:1 };
 const ItemGateB =   { Color:'#002', Radius:15, Shape:'#', NoPickup:1 };
 const ItemGateW =   { Color:'#002', Radius:15, Shape:'#', NoPickup:1 };
 
-const ActorBat     = { Color:'#000', Radius:10, Shape:'b', Mode:'Fly', Speed:0.8 };
+const ActorBat     = { Color:'#000', Radius:10, Shape:'b', Mode:'Fly',    Speed:0.8, NoKill:true };
 const ActorDragonR = { Color:'#f00', Radius:10, Shape:'d', Mode:'Attack', Speed:0.8 };
 const ActorDragonG = { Color:'#0f4', Radius:10, Shape:'d', Mode:'Attack', Speed:0.6 };
 const ActorDragonY = { Color:'#fc0', Radius:10, Shape:'d', Mode:'Attack', Speed:0.5 };
@@ -891,6 +886,20 @@ function GetItemDist(it,pos)
 
 const PickupRange = 18;
 
+function DisconnectItem(item)
+{
+	let owner = item ? item.Owner : null;
+	if (owner)
+	{
+		item.Owner = null;
+		if (owner.Item == item)
+		{
+			owner.Item = null;
+		}
+		item.Owner = null;
+	}
+}
+
 function TryPickup(range)
 {
 	let item = null;
@@ -915,9 +924,12 @@ function TryPickup(range)
 		// Drop in current location of item
 		let spot = Player.Item.Pos; // Player.Pos
 		DropItem(Player.Item,Room,spot.x,spot.y);
+		Player.Item.Owner = undefined;
 		Player.Item = null;
 	}
+	
 	Player.Item = item;
+	
 	if (item != null)
 	{
 		let dx = item.Pos.x - Player.Pos.x;
@@ -932,6 +944,8 @@ function TryPickup(range)
 			dx *= resize;
 			dy *= resize;
 		}
+		DisconnectItem(item)
+		item.Owner = Player;
 		Player.Handle = { x:dx, y:dy };
 		PlaySound('Take');
 	}
@@ -1137,13 +1151,28 @@ function UpdateCarry(who)
 		item.Pos.x = who.Pos.x+dx;
 		item.Pos.y = who.Pos.y+dy;		
 	}
+	for (let it of Items)
+	{
+		let owner = it.Owner;
+		if (owner !== undefined)
+		{
+			if (owner == Player)
+			{
+			}
+			else
+			{
+				it.Pos.x = owner.Pos.x + owner.Radius;
+				it.Pos.y = owner.Pos.y + owner.Radius;			
+			}
+		}
+	}
 }
 
 let FrameIndex = 0;
 	
 function update(dt) // aka UpdateWorld
 {
-	FrameIndex += 1;
+	FrameIndex = (FrameIndex + 1) & 0xFFFF;
 
 	let pos = Player.Pos;
 	
@@ -1401,15 +1430,18 @@ function DrawGate(pos)
 
 function DrawSword(pos)
 {
-	//ctx.fillRect(pos.x-14, pos.y, 24, 4);
-	ctx.strokeStyle = ItemSword.Color;
 	ctx.lineWidth = 4;
+	ctx.strokeStyle = ItemSword.Color;
+	//  /
+	// <------
+	//  \
 	ctx.beginPath();
-	ctx.moveTo(pos.x+ 6, pos.y-8);
-	ctx.lineTo(pos.x+14, pos.y);
-	ctx.lineTo(pos.x+ 8, pos.y+10);
-	ctx.moveTo(pos.x-12, pos.y+1);
-	ctx.lineTo(pos.x+12, pos.y+1);
+	ctx.moveTo(pos.x- 8, pos.y-10);
+	ctx.lineTo(pos.x-14, pos.y);
+	ctx.moveTo(pos.x- 8, pos.y+10);
+	ctx.lineTo(pos.x-14, pos.y);
+	ctx.moveTo(pos.x-12, pos.y);
+	ctx.lineTo(pos.x+12, pos.y);
 	ctx.stroke();
 }
 
@@ -1500,22 +1532,6 @@ const DeadPoints =
 	[+10,+28], // 15:
 ];
 
-// X      X
-//  X XX X
-//   X  X
-
-const BatPoints =
-[
-	[-10,-16], //  0: Up Left
-	[+10,-16], //  1: Up Right
-	[- 8,+ 4], //  2:
-	[+ 8,+ 4], //  3:
-	[- 8,- 0], //  4:
-	[+ 8,+ 0], //  5:
-	[-10,+16], //  6: Down Left
-	[+10,+16], //  7: Down Right
-];
-
 function DrawLines(pos,vlist,ilist,s)
 {
 	let last = -1;
@@ -1558,8 +1574,25 @@ function DrawDragon(actor)
 function GetBlackContrast()
 {
 	let index = (FrameIndex >> 1) % 6;
-	return ['#000','#000','#200','#000','#000','#022'][index];
+	return ['#000','#000','#200','#000','#000','#002'][index];
 }
+
+// 0            1
+//      2  3
+//     4    5
+//  6          7
+
+const BatPoints =
+[
+	[-10,-14], //  0: Up Left
+	[+10,-14], //  1: Up Right
+	[- 8,+ 3], //  2:
+	[+ 8,+ 3], //  3:
+	[- 6,- 2], //  4:
+	[+ 6,- 2], //  5:
+	[-10,+14], //  6: Down Left
+	[+10,+14], //  7: Down Right
+];
 
 function DrawBat(actor)
 {
@@ -1569,11 +1602,11 @@ function DrawBat(actor)
 	ctx.beginPath();
 	if (actor.Mode == 'Fly' && (FrameIndex&16))
 	{
-		DrawLines(pos,BatPoints,[ 0,2, 1,3, 2,5, 3,4 ], s);
+		DrawLines(pos,BatPoints,[ 0,2,0,4, 1,3,1,5, 2,5, 3,4 ], s);
 	}
 	else
 	{
-		DrawLines(pos,BatPoints,[ 6,2, 7,3, 2,5, 3,4 ], s);
+		DrawLines(pos,BatPoints,[ 6,2,6,4, 7,3,7,5, 3,4, 2,5, 4,5 ], s);
 	}
 	ctx.lineWidth = 6;
 	ctx.stroke();
@@ -1645,12 +1678,63 @@ function Fly(who)
 {
 	if (DebugKill) return;
 	who.Timer = who.Timer ? (who.Timer+1) : 1;
+	let px = who.Pos.x;
+	let py = who.Pos.y;
+	if (who.dx === undefined)
+	{
+		who.dx = (FrameIndex&1) ? 1:-1;
+		who.dy = -1;
+	}
+	else if (who.Timer > 180 && Math.random() < 0.5)
+	{
+		who.Timer = -85*Math.random();
+		who.dx = -who.dx;
+	}
+	if (px + who.dx < -120)
+	{
+		px += 2*120;
+		py = (py + 50) % 90;
+	}
+	else if (px + who.dx > 120)
+	{
+		px -= 2*120;
+		py = (py + 50) % 90;
+	}
+	else if (py + who.dy < -90)
+	{
+		px = (px + 50) % 120;
+		py += 2*90;
+	}
+	who.Pos.x = px + who.dx;
+	who.Pos.y = py + who.dy;
+	if (who.Item)
+	{
+		return; // cannt pickup while carrying
+	}
+	for (let it of Items)
+	{
+		if (it.Room === who.Room)
+		{
+			if (it.Owner === undefined)
+			{
+				if (GetItemDist(it,who.Pos) < 24*24)
+				{
+					// Bat pickup item
+					who.Item = it;
+					it.Owner = who;
+					break;
+				}
+			}
+		}
+	}
+	/*
 	let dx = Math.sin(who.Timer*0.025);
 	let dy = Math.cos(who.Timer*0.025);
 	if (dx > 0) who.Pos.x += who.Speed;
 	if (dx < 0) who.Pos.x -= who.Speed;
 	if (dy > 0) who.Pos.y += who.Speed/2;
 	if (dy < 0) who.Pos.y -= who.Speed/2;
+	*/
 }
 
 function GetLifeByRoom(room)
@@ -1674,6 +1758,10 @@ function TryKill()
 		let life = GetLifeByRoom(room);
 		for (let actor of life)
 		{
+			if (actor.NoKill)
+			{
+				continue;
+			}
 			let dist = GetItemDist(ItemSword,actor.Pos);
 			let hitSq = actor.Radius * actor.Radius;
 			if (dist < hitSq)
