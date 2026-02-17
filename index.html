@@ -602,8 +602,9 @@ let Player = { Pos:{x:0,y:0,z:WorldDepth}, Item:null };
 // Input
 const keys = { w:false, a:false, s:false, d:false, space:false };
 
-// OBSOLETE: Debug
-/*
+const Hint = document.getElementById("hint-text");
+
+// Used by mobile arrow buttons
 function handleTouch(e)
 {
 	const dir = e.target.dataset.dir;
@@ -613,7 +614,7 @@ function handleTouch(e)
 	if (dir === 'left')  keys.a = true;
 	if (dir === 'right') keys.d = true;
 	if (dir === 'space') keys.space = true;
-	Hint.innerHTML = dir;
+	//Hint.innerHTML = dir;
 }
 
 function handleUntouch(e)
@@ -624,9 +625,6 @@ function handleUntouch(e)
 	keys.d = false;
 	keys.space = false;
 }
-*/
-
-const Hint = document.getElementById("hint-text");
 
 // 0=N
 // 1=NE
@@ -650,7 +648,7 @@ function ToDirection(dx,dy)
 	return 7; // NW
 }
 
-let TouchTarget = null;//{ x:200, y:600 };
+let TouchTarget = null;
 
 function StartTouch(e)
 {
@@ -737,9 +735,9 @@ function EnableTouchControls()
 	canvas.addEventListener('pointerdown', e => { Hint.innerHTML = "pointer"; });
 	pad.addEventListener('touchstart', handleTouch, { passive: true });
 	pad.addEventListener('touchend', handleUntouch, { passive: true });
+	*/
 	pad.addEventListener('mousedown', handleTouch);
 	pad.addEventListener('mouseup', handleUntouch);
-	*/
 	
 	canvas.addEventListener('touchstart', canvasTouch, { passive: true });
 	canvas.addEventListener('touchend', canvasRelease, { passive: true });
