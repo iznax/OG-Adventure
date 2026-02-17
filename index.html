@@ -731,11 +731,12 @@ function EnableTouchControls()
 	const kbd = document.getElementById('key-controls');
 	kbd.style.display = 'none';
 
-	/*
-	canvas.addEventListener('pointerdown', e => { Hint.innerHTML = "pointer"; });
+	//canvas.addEventListener('pointerdown', e => { Hint.innerHTML = "pointer"; });
+	
+	// Mobile button events
 	pad.addEventListener('touchstart', handleTouch, { passive: true });
 	pad.addEventListener('touchend', handleUntouch, { passive: true });
-	*/
+	// PC mouse button events
 	pad.addEventListener('mousedown', handleTouch);
 	pad.addEventListener('mouseup', handleUntouch);
 	
